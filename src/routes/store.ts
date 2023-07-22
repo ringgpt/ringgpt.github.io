@@ -71,7 +71,7 @@ if (browser) {
         createNode({ role: 'assistant', content: 'how can I help you?' }, null);
         createNode({ role: 'user', content: 'explain quantum computing for a five year old' }, 0);
         createNode({ role: 'user', content: 'say "I love you" in binary' }, 0);
-        createNode({ role: 'user', content: 'show me a spline in python' }, 0);
+        createNode({ role: 'user', content: 'show me a quine in python' }, 0);
         createNode({ role: 'user', content: '...' }, 0);
     }
 }
