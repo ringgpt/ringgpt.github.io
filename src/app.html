@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8" />
-        <link rel="icon" href="%sveltekit.assets%/favicon.svg" />
+        <link rel="icon" href="%sveltekit.assets%/favicon2.svg" />
         <meta name="viewport" content="width=device-width" />
         <title>RingGpt</title>
         %sveltekit.head%
@@ -23,5 +23,30 @@
         color: #aaf;
         margin: 0;
         padding: 0;
+    }
+
+    .codeblock {
+        background-color: rgb(17, 17, 17);
+
+        padding: 1em;
+        margin: 1em;
+        border-radius: 0.5em;
+    }
+    .codeblock > div {
+        position: relative;
+        top: -1em;
+        left: -1em;
+        width: calc(100% + 1em);
+        padding: 0.5em;
+        background-color: rgb(32, 32, 32);
+
+        border-radius: 10px 10px 0px 0;
+    }
+    .codeblock > div > button {
+        all: unset;
+        position: relative;
+        color: blue;
+        cursor: pointer;
+        float: right;
     }
 </style>

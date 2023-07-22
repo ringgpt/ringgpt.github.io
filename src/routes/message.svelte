@@ -24,25 +24,34 @@
     });
 
     function tohtml(text: string) {
-        let res = text.replace(/\n/g, '<br>');
+        let res = text.replaceAll('<', '&lt;').replace(/\n/g, '<br>');
 
         var last_index: number = 0;
 
         while (true) {
             let start_index = res.indexOf('```', last_index);
-            last_index = res.indexOf('```', start_index + 1);
+
+            if (start_index == -1) {
+                break;
+            }
+
+            let inner_start_index = res.indexOf('<br>', start_index + 1);
+            let lang = res.substring(start_index + 3, inner_start_index);
+
+            last_index = res.indexOf('```', inner_start_index);
 
             if (last_index == -1) {
                 break;
             }
 
-            res =
-                res.substring(0, start_index) +
-                `<pre style='background:black;margin:10px;padding:10px;border-radius:10px'>` +
-                res.substring(start_index + 3, last_index) +
-                '</pre>' +
-                res.substring(last_index + 3);
-            console.log(res);
+            let code = res.substring(inner_start_index + 4, last_index);
+            let copycode = code.replaceAll('"', '\\"').replaceAll('<br>', '\n');
+            let codeblock =
+                `<pre class="codeblock"><div> ${lang} <button onclick='navigator.clipboard.writeText(\`${copycode}\`)'>copy</button> </div>` +
+                code +
+                '</pre>';
+
+            res = res.substring(0, start_index) + codeblock + res.substring(last_index + 3);
 
             // break
         }
