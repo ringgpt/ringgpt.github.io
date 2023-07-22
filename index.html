@@ -2,26 +2,26 @@
 <html lang="en">
     <head>
         <meta charset="utf-8" />
-        <link rel="icon" href="./favicon.svg" />
+        <link rel="icon" href="./favicon2.svg" />
         <meta name="viewport" content="width=device-width" />
         <title>RingGpt</title>
         
 		<link href="./_app/immutable/assets/2.e81f2542.css" rel="stylesheet">
-		<link rel="modulepreload" href="./_app/immutable/entry/start.3237f7b1.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.001f28a5.js">
 		<link rel="modulepreload" href="./_app/immutable/chunks/scheduler.3578c530.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.816ff370.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/paths.9af81f61.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.76aed146.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.b5264a43.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/paths.a10e885e.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.9f8a1114.js">
 		<link rel="modulepreload" href="./_app/immutable/chunks/index.bafd8785.js">
 		<link rel="modulepreload" href="./_app/immutable/nodes/0.bd608efa.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/2.3691bb34.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.4760ada0.js">
     </head>
     <body data-sveltekit-preload-data="hover">
         <div style="display: contents">  <main class="svelte-eolhps">  </main> 
 			
 			<script>
 				{
-					__sveltekit_18znnru = {
+					__sveltekit_1mmxbw = {
 						base: new URL(".", location).pathname.slice(0, -1),
 						env: {}
 					};
@@ -31,8 +31,8 @@
 					const data = [null,null];
 
 					Promise.all([
-						import("./_app/immutable/entry/start.3237f7b1.js"),
-						import("./_app/immutable/entry/app.76aed146.js")
+						import("./_app/immutable/entry/start.001f28a5.js"),
+						import("./_app/immutable/entry/app.9f8a1114.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 2],
@@ -58,5 +58,30 @@
         color: #aaf;
         margin: 0;
         padding: 0;
+    }
+
+    .codeblock {
+        background-color: rgb(17, 17, 17);
+
+        padding: 1em;
+        margin: 1em;
+        border-radius: 0.5em;
+    }
+    .codeblock > div {
+        position: relative;
+        top: -1em;
+        left: -1em;
+        width: calc(100% + 1em);
+        padding: 0.5em;
+        background-color: rgb(32, 32, 32);
+
+        border-radius: 10px 10px 0px 0;
+    }
+    .codeblock > div > button {
+        all: unset;
+        position: relative;
+        color: blue;
+        cursor: pointer;
+        float: right;
     }
 </style>
