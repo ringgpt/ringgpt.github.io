@@ -1,141 +1,114 @@
 <script lang="ts">
-    import Message from "./message.svelte";
-    import type { MessageNode, chatMessage } from "./chat";
-    import { chatCompletion } from "./backendrequest";
-    import { onMount, tick } from "svelte";
+    import { browser } from '$app/environment';
+    import { onMount } from 'svelte';
+    import { chatCompletion } from './backendrequest';
+    import { createNode, deleteNode, getNode, type MessageNodeId } from './store';
+    import Message from './message.svelte';
+    import { get } from 'svelte/store';
+    import { updated } from '$app/stores';
 
-    export var node:MessageNode;
+    export var nodeId: MessageNodeId;
 
+    let node = getNode(nodeId);
 
-    let bubble:any;
+    let old_child_count = $node ? $node.children.length : 0;
 
+    var oldid = nodeId;
+    $: if (browser && nodeId != oldid) {
+        node = getNode(nodeId);
+        oldid = nodeId;
 
-    let openchild:MessageNode[] =[];
-    onMount(()=>{
-        node.children.forEach((child)=>{
-            child.parent = node;
-        })
+        old_child_count = $node.children.length;
+        openchild = 0;
+    }
 
-        if (node.message.role == "user"){
-            bubble.$$.ctx[1].focus();
-        }else{
-            if (node.children.length == 0){
-                node.children = [{message:{content:"", role:"user"}, children:[], parent:node}]
-            }
-        }
-        openchild = [node.children[0]];
-    })
+    let openchild = 0;
 
-    let childindex = 0
-
-    function gethist(){
-        let hist : chatMessage[] = [node.message];
-        let prev_node = node;
-
-        while (prev_node.parent != null){
-            prev_node = prev_node.parent;
-            hist = [prev_node.message, ...hist];
+    function get_history() {
+        console.log('get history');
+        let hist = [$node.message];
+        let prev = $node.parent;
+        while (prev != null) {
+            let prevnode = getNode(prev);
+            hist = [get(prevnode).message, ...hist];
+            prev = get(prevnode).parent;
         }
 
+        console.log(hist);
         return hist;
     }
 
-    var sending = false;
+    async function send() {
+        console.log('send');
 
-    async function send(){
+        let hist = get_history();
+        let childid = createNode({ role: 'assistant', content: '' }, nodeId);
+        createNode({ role: 'user', content: '' }, childid);
 
-        let hist = gethist();
-        sending = true;
-        let new_child:MessageNode = {message:{content:"...", role:"assistant"}, children:[], parent:node}
+        let child = getNode(childid);
+        let res = await chatCompletion({ messages: hist }, (newcontent) =>
+            child.update((c) => ({ ...c, message: { ...c.message, content: newcontent } }))
+        );
 
-        node.children = [...node.children, new_child]
-        
-
-
-        sending = false;
-
+        child.update((c) => ({ ...c, message: { ...c.message, content: res } }));
     }
-
-    var listening = false
-
-    function next(){
-        changepage(1);
-    }
-    function previous(){
-        changepage(-1);
-    }
-
-    async function changepage(delta:number){
-        openchild = [];
-        listening = true
-        await tick()
-
-        childindex += delta;
-        openchild = [node.children[childindex]];
-
-        await tick()
-        listening = false
-    }
-
-    function changeMessage (content:string){
-        node.message.content = content;
-    }
-
-
+    onMount(() => {
+        node.subscribe((val) => {
+            if (val.children.length > old_child_count) {
+                openchild = 0;
+                console.log('child added');
+                old_child_count = val.children.length;
+            } else if (val.children.length < old_child_count) {
+                console.log('child removed');
+                openchild = Math.max(0, openchild - 1);
+                old_child_count = val.children.length;
+            }
+        });
+    });
 </script>
 
-<Message bind:this={bubble} message ={node.message} sendMessage={send} changeMessage={changeMessage} listening={listening}></Message>
+{#if $node}
+    <Message id={nodeId} sendMessage={send} />
 
+    {#if $node.children.length > 0}
+        <div class="navbar">
+            <button
+                class={openchild > 0 ? 'active' : 'hidden'}
+                on:click={() => {
+                    openchild = Math.max(0, openchild - 1);
+                }}>&lt;</button
+            >
 
-<div class="chatnode">
+            <button
+                class={$node.children.length > openchild + 1 ? 'active' : 'hidden'}
+                on:click={() => {
+                    openchild = Math.min($node.children.length - 1, openchild + 1);
+                }}>&gt;</button
+            >
+        </div>
 
-{#if node.children.length > 0}
-
-    <div class="subbar">
-
-        {#if node.children.length > 1}
-
-            {#if childindex > 0}
-                <button on:click={previous}>&lt;</button>
-            {/if}
-            
-            {#if childindex < node.children.length-1}
-                <button on:click={next}>&gt;</button>
-                
-            {/if}
-
-        
-        {/if}
-
-    </div>
-
-
-    {#each openchild as node,i}
-
-        <svelte:self bind:node={node} />
-
-    {/each}
-
+        <div>
+            <svelte:self nodeId={$node.children[openchild]} />
+        </div>
+    {/if}
 {/if}
-    
-</div>
-
 
 <style>
-
-    .chatnode{
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-
-        margin:10px;
+    .navbar {
+        display: flex;
+        justify-content: center;
+        font-family: monospace;
     }
 
-    .subbar{
-        display:flex;
-        flex-direction:row;
-        justify-content:center;
-        align-items: center;
-        width:100%;
+    .navbar > button {
+        /* all: unset; */
+        all: unset;
+        color: rgba(255, 255, 255, 0.28);
+        margin: 0.5em;
+        border-radius: 1em;
+    }
+    .navbar > button.active {
+        display: block;
+        color: white;
     }
 </style>

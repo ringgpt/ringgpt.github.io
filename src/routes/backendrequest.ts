@@ -1,4 +1,16 @@
-import type { chatMessage } from "./chat";
+import { get } from "svelte/store";
+import { useserver, type chatMessage, openaikey } from "./store";
+import { chat_stream_request } from "./apirequest";
+
+
+export type OpenAIStreamPayload = {
+    messages: chatMessage[];
+    maxTokens?: number;
+    temperature?: number;
+    topP?: number;
+    n?: number;
+    logitBias?: { [keys: string]: number };
+};
 
 export async function completionRequest(
     params: {
@@ -70,28 +82,36 @@ export async function chatCompletion(
     },
     callback?: (answer: string) => void
 ) {
-    let resp = await fetch("/api/chat", {
+
+    let stream: ReadableStreamDefaultReader<Uint8Array>;
+    if (get(useserver)){
+        let resp = await fetch("/api/chat", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify(params),
+            body: JSON.stringify(params),
 
-    });
+        });
 
-    if (resp.body == null) {
-        console.error("failed to get response stream");
+        if (resp.body == null) {
+            console.error("failed to get response stream");
 
-    return "";
+            return "";
+        }
+
+        if (resp.body == null) {
+            console.error("failed to get response stream");
+
+            return "";
+        }
+        stream = resp.body.getReader();
+    }else{  
+
+        stream = (await chat_stream_request( params as OpenAIStreamPayload, get(openaikey))).getReader();
+
     }
 
-    if (resp.body == null) {
-        console.error("failed to get response stream");
-
-        return "";
-    }
-
-    let stream = resp.body.getReader();
     let decoder = new TextDecoder();
     let answer = "";
 

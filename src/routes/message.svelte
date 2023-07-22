@@ -1,175 +1,183 @@
-
 <script lang="ts">
-    import { onMount } from "svelte";
-    import type { chatMessage } from "./chat";
-    import { browser } from "$app/environment";
-    import { text } from "@sveltejs/kit";
+    import { onMount } from 'svelte';
+    import { getNode, type MessageNodeId, type chatMessage, createNode, deleteNode } from './store';
+    import { browser } from '$app/environment';
 
+    export let id: MessageNodeId;
+    let old_id = id;
+    export let sendMessage: () => void;
 
-    export let message:chatMessage;
-    export let changeMessage = (content:string)=>{};
-    export let sendMessage = ()=>{};
+    let node = getNode(id)!;
 
-    export let listening = false;
+    let me: any;
 
-    let me:any;
-
-    $: if (browser && me ){
-        if (!listening){
-            console.log('not listening');
-        }else{
-            console.log("listening.");
-            
-            me.innerHTML = tohtml(message.content)    
+    $: {
+        node = getNode(id)!;
+        if (me && ($node.message.role != 'user' || old_id != id)) {
+            me.innerHTML = tohtml($node.message.content);
+            old_id = id;
         }
     }
 
+    onMount(() => {
+        me.innerHTML = tohtml($node.message.content);
+    });
 
+    function tohtml(text: string) {
+        let res = text.replace(/\n/g, '<br>');
 
-    onMount(()=>{
-        me.innerHTML = tohtml(message.content);
-    })
+        var last_index: number = 0;
 
-    function tohtml(text:string){
-        let res = text.replace(/\n/g, "<br>");
+        while (true) {
+            let start_index = res.indexOf('```', last_index);
+            last_index = res.indexOf('```', start_index + 1);
 
-
-        var last_index:number = 0;
-
-
-        while (true){
-            let start_index = res.indexOf("```",last_index)
-            last_index = res.indexOf("```",start_index+1)
-
-            if (last_index == -1){
+            if (last_index == -1) {
                 break;
             }
 
-            res = res.substring(0,start_index) + `<pre style='background:black;margin:10px;padding:10px;border-radius:10px'>` + res.substring(start_index+3,last_index) + "</pre>" + res.substring(last_index+3);
+            res =
+                res.substring(0, start_index) +
+                `<pre style='background:black;margin:10px;padding:10px;border-radius:10px'>` +
+                res.substring(start_index + 3, last_index) +
+                '</pre>' +
+                res.substring(last_index + 3);
             console.log(res);
-            
-            // break
 
+            // break
         }
         return res;
-
     }
 
-    function totext(html:string){
-        return html.replace(/<br>/g, "\n");
+    function totext(html: string) {
+        return html.replace(/<br>/g, '\n');
     }
-    
+
     let shiftpressed = false;
 
-    function keypress(e:KeyboardEvent){
-
-        if(e.key == "Enter" && !shiftpressed){
+    function keypress(e: KeyboardEvent) {
+        if (e.key == 'Enter' && !shiftpressed) {
             e.preventDefault();
             sendMessage();
-        }else{
-
+        } else {
         }
     }
 
-
-    function keydown(e:KeyboardEvent){
-        if(e.key == "Shift"){
+    function keydown(e: KeyboardEvent) {
+        if (e.key == 'Shift') {
             shiftpressed = true;
         }
     }
-    function keyup(e:KeyboardEvent){
-        if(e.key == "Shift"){
+    function keyup(e: KeyboardEvent) {
+        if (e.key == 'Shift') {
             shiftpressed = false;
         }
     }
 
-    function input(e:Event){
-    
-        changeMessage(totext(me.innerHTML));
+    function input(e: Event) {
+        let newcontent = totext(me.innerHTML);
+        let oldcontent = $node.message.content;
+        if ($node.children.length > 0) {
+            createNode({ role: 'user', content: newcontent }, $node.parent);
+            me.innerHTML = tohtml(oldcontent);
+            console.log('create new node', newcontent);
+        } else {
+            node.update((n) => {
+                n.message.content = newcontent;
+                return n;
+                return n;
+            });
+        }
     }
-    
-    export function cleanMarkup(txt:string){
+
+    export function cleanMarkup(txt: string) {
         let textarea = document.createElement('textarea');
 
         textarea.innerHTML = txt;
         textarea.remove();
         return textarea.value;
-
     }
 
-    function onpaste(e:ClipboardEvent){
+    function onpaste(e: ClipboardEvent) {
         e.preventDefault();
         console.log('paste');
-        
+
         let text = e.clipboardData?.getData('text/plain');
-        if(text){
+        if (text) {
             document.execCommand('insertText', false, text);
         }
     }
-
-
 </script>
 
-
-
-
-    {#if message.role == "user"}
-        <div class=user>
-
+<div class="bubble">
+    <button>&nbsp;</button>
+    {#if $node.message.role == 'user'}
+        <div class="user">
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div bind:this={me} contenteditable class=msg  on:keypress={keypress} on:keyup={keyup} on:keydown={keydown} on:input={input} on:paste = {onpaste}></div>
+            <div
+                bind:this={me}
+                contenteditable
+                class="msg"
+                on:keypress={keypress}
+                on:keyup={keyup}
+                on:keydown={keydown}
+                on:input={input}
+                on:paste={onpaste}
+            />
+            <button
+                class="active"
+                on:click={() => {
+                    deleteNode(id);
+                }}>x</button
+            >
         </div>
     {:else}
-
-        <div class=assistant>
-            <pre bind:this={me} class=msg ></pre>
+        <div class="assistant">
+            <div bind:this={me} class="msg" />
         </div>
-
     {/if}
-
-
+    <button
+        class="active"
+        on:click={() => {
+            deleteNode(id);
+        }}>x</button
+    >
+</div>
 
 <style>
-
-    .msg{
-        color:white;
-
-
-        border-radius: 10px;
-        justify-content: flex-start;
-
-        max-width: 40em;
-
-
-        white-space: pre-wrap; /* Wrap long lines of text */
-    /* Optional styles for better readability */
-    font-family: monospace;
-    padding: 10px;
-    }
-    .user{
+    .bubble {
         display: flex;
-        right:0;
-        justify-content:center;
-
-    }
-    .assistant{
-        display: flex;
-        left:0;
+        left: 0;
         justify-content: center;
-
-
+    }
+    .bubble:hover > button {
+        display: block;
+        color: rgb(255, 35, 35);
+    }
+    button {
+        all: unset;
+        display: none;
+        margin: 0.5em;
     }
 
-    .user>.msg{
+    .msg {
+        color: white;
+        justify-content: flex-start;
+        max-width: 40em;
+        white-space: pre-wrap; /* Wrap long lines of text */
+        font-family: monospace;
+        padding: 10px;
+    }
+
+    .user,
+    .assistant {
+        display: flex;
+        right: 0;
+        justify-content: center;
         background-color: #28b36b;
+        border-radius: 10px;
     }
-    .assistant>.msg{
+    .assistant {
         background-color: #2d2d2d;
     }
-    
-
-
-
 </style>
-
-
