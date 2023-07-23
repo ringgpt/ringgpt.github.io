@@ -1,7 +1,6 @@
-import { get } from "svelte/store";
-import { useserver, type chatMessage, openaikey } from "./store";
-import { chat_stream_request } from "./apirequest";
-
+import { get, type Writable } from 'svelte/store';
+import { useserver, type chatMessage, openaikey } from './store';
+import { chat_stream_request } from './apirequest';
 
 export type OpenAIStreamPayload = {
     messages: chatMessage[];
@@ -23,29 +22,27 @@ export async function completionRequest(
     },
     callback?: (answer: string) => void
 ) {
-    let resp = await fetch("/api/chat", {
-        method: "POST",
+    let resp = await fetch('/api/chat', {
+        method: 'POST',
         headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json'
         },
-        body: JSON.stringify(params.message,),
+        body: JSON.stringify(params.message)
     });
 
     return streamResponse(resp);
 }
 
 async function streamResponse(resp: Response) {
-
-
     if (resp.body == null) {
-        console.error("failed to get response stream");
+        console.error('failed to get response stream');
 
-        return "";
+        return '';
     }
 
     let stream = resp.body.getReader();
     let decoder = new TextDecoder();
-    let answer = "";
+    let answer = '';
 
     let done = false;
     while (!done) {
@@ -53,15 +50,15 @@ async function streamResponse(resp: Response) {
         done = doneReading;
         const chunkValue = decoder.decode(value);
 
-        let items = chunkValue.split("\n");
+        let items = chunkValue.split('\n');
 
         items.forEach((item) => {
-            if (item == "data: [DONE]") {
+            if (item == 'data: [DONE]') {
                 return answer;
             }
-            if (!item.startsWith("data:")) {
-                console.error("unexpected response", item);
-                throw new Error("unexpected response");
+            if (!item.startsWith('data:')) {
+                console.error('unexpected response', item);
+                throw new Error('unexpected response');
             }
             let data = JSON.parse(item.slice(6));
             answer += data.choices[0].text;
@@ -80,40 +77,37 @@ export async function chatCompletion(
         n?: number;
         logitBias?: { [keys: string]: number };
     },
-    callback?: (answer: string) => void
+
+    message: Writable<chatMessage>
 ) {
-
     let stream: ReadableStreamDefaultReader<Uint8Array>;
-    if (get(useserver)){
-        let resp = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-            body: JSON.stringify(params),
-
+    if (get(useserver)) {
+        let resp = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(params)
         });
 
         if (resp.body == null) {
-            console.error("failed to get response stream");
-
-            return "";
+            console.error('failed to get response stream');
+            return;
         }
 
         if (resp.body == null) {
-            console.error("failed to get response stream");
+            console.error('failed to get response stream');
 
-            return "";
+            return;
         }
         stream = resp.body.getReader();
-    }else{  
-
-        stream = (await chat_stream_request( params as OpenAIStreamPayload, get(openaikey))).getReader();
-
+    } else {
+        stream = (
+            await chat_stream_request(params as OpenAIStreamPayload, get(openaikey))
+        ).getReader();
     }
 
     let decoder = new TextDecoder();
-    let answer = "";
 
     let done = false;
     while (!done) {
@@ -121,27 +115,41 @@ export async function chatCompletion(
 
         done = doneReading;
         const chunkValue = decoder.decode(value);
-        
 
-        let items = chunkValue.split("\n").filter((item) => item.length > 0);
+        let items = chunkValue.split('\n').filter((item) => item.length > 0);
 
         items.forEach((item) => {
-            if (item == "data: [DONE]") {
-                return answer;
+            if (item == 'data: [DONE]') {
+                return;
             }
-            if (!item.startsWith("data:")) {
-                console.error("unexpected response", item);
-                throw new Error("unexpected response");
+            if (!item.startsWith('data:')) {
+                console.error('unexpected response', item);
+                throw new Error('unexpected response');
             }
 
             let data = JSON.parse(item.slice(6));
 
             if (data.choices[0].delta.content) {
-                answer += data.choices[0].delta.content;
-                callback?.(answer);
+                message.update((old) => {
+                    old.content += data.choices[0].delta.content;
+                    return old;
+                });
+            } else if (data.choices[0].delta.function_call) {
+                let function_call = data.choices[0].delta.function_call;
+                if (function_call.name) {
+                    message.update((old) => {
+                        old.function_call = function_call;
+                        return old;
+                    });
+                } else {
+                    message.update((old) => {
+                        old.function_call!.arguments += function_call.arguments;
+                        return old;
+                    });
+                }
             }
         });
     }
 
-    return answer;
+    return;
 }

@@ -13,14 +13,16 @@
 
     $: {
         node = getNode(id)!;
-        if (me && ($node.message.role != 'user' || old_id != id)) {
-            me.innerHTML = tohtml($node.message.content);
+        if (me && old_id != id) {
+            me.innerHTML = tohtml($node.message.content!);
             old_id = id;
+            me.focus();
         }
     }
 
     onMount(() => {
-        me.innerHTML = tohtml($node.message.content);
+        me.innerHTML = tohtml($node.message.content!);
+        // me.focus();
     });
 
     function tohtml(text: string) {
@@ -85,7 +87,7 @@
 
     function input(e: Event) {
         let newcontent = totext(me.innerHTML);
-        let oldcontent = $node.message.content;
+        let oldcontent = $node.message.content!;
         if ($node.children.length > 0) {
             createNode({ role: 'user', content: newcontent }, $node.parent);
             me.innerHTML = tohtml(oldcontent);

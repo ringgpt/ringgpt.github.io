@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { tick } from 'svelte';
 import { writable, type Writable, get } from 'svelte/store';
 
 export function createWritable<T>(key: string, defaultValue: T) {
@@ -52,7 +53,26 @@ if (browser) {
 export const messagecount = createWritable('messagecount', 0);
 
 export type chatMessage = {
-    role: 'user' | 'assistant' | 'system';
+    role: 'user' | 'system' | 'assistant' | 'function';
+    content: string | null;
+    function_call?: { name: string; arguments: string };
+    name?: string;
+};
+
+export type content_message = {
+    role: 'user' | 'system' | 'assistant';
+    content: string;
+};
+
+export type function_call = {
+    role: 'assistant';
+    content: string | null;
+    function_call: { name: string; arguments: string };
+};
+
+export type function_result = {
+    role: 'function';
+    name: string;
     content: string;
 };
 
@@ -71,8 +91,19 @@ if (browser) {
         createNode({ role: 'assistant', content: 'how can I help you?' }, null);
         createNode({ role: 'user', content: 'explain quantum computing for a five year old' }, 0);
         createNode({ role: 'user', content: 'say "I love you" in binary' }, 0);
-        createNode({ role: 'user', content: 'show me a quine in python' }, 0);
-        createNode({ role: 'user', content: '...' }, 0);
+        createNode({ role: 'user', content: 'show me a quine in javascript' }, 0);
+        let lastid = createNode({ role: 'user', content: 'what is the current time?' }, 0);
+
+        // lastid = createNode(
+        //     {
+        //         role: 'assistant',
+        //         content: null,
+        //         function_call: { name: 'eval', arguments: '{"argument":"1+1"}' }
+        //     },
+        //     lastid
+        // );
+        // lastid = createNode({ role: 'function', name: 'eval', content: '2' }, lastid);
+        // lastid = createNode({ role: 'user', content: 'good.' }, lastid);
     }
 }
 
@@ -93,12 +124,17 @@ export function getNode(id: MessageNodeId) {
 }
 
 export function createNode(message: chatMessage, parent: MessageNodeId | null) {
+    if (message.role == 'function') {
+        if (message.content == undefined) {
+            message.content = '';
+        }
+    }
+
     let id = 0;
     messagecount.update((value) => {
         id = value;
         return value + 1;
     });
-    console.log('creating ', id);
 
     let node = getNode(id);
     node?.set({

@@ -3,9 +3,12 @@
     import { onMount } from 'svelte';
     import { chatCompletion } from './backendrequest';
     import { createNode, deleteNode, getNode, type MessageNodeId } from './store';
-    import Message from './message.svelte';
-    import { get } from 'svelte/store';
+    import Message from './staticMessage.svelte';
+    import { get, writable } from 'svelte/store';
     import { updated } from '$app/stores';
+    import UserMessage from './staticMessage.svelte';
+    import DynamicMessage from './dynamicMessage.svelte';
+    import StaticMessage from './staticMessage.svelte';
 
     export var nodeId: MessageNodeId;
 
@@ -25,7 +28,6 @@
     let openchild = 0;
 
     function get_history() {
-        console.log('get history');
         let hist = [$node.message];
         let prev = $node.parent;
         while (prev != null) {
@@ -39,24 +41,82 @@
     }
 
     async function send() {
-        console.log('send');
-
         let hist = get_history();
         let childid = createNode({ role: 'assistant', content: '' }, nodeId);
-        createNode({ role: 'user', content: '' }, childid);
 
         let child = getNode(childid);
-        let res = await chatCompletion({ messages: hist }, (newcontent) =>
-            child.update((c) => ({ ...c, message: { ...c.message, content: newcontent } }))
-        );
 
-        child.update((c) => ({ ...c, message: { ...c.message, content: res } }));
+        let message = writable(get(child).message);
+
+        message.subscribe((val) => {
+            child.update((c) => ({ ...c, message: val }));
+        });
+
+        await chatCompletion({ messages: hist }, message);
+
+        if (get(message).function_call) {
+            let fcall = get(message).function_call;
+            if (fcall?.name == 'eval') {
+                let res: any;
+                let res_string = '';
+
+                childid = createNode(
+                    { role: 'function', name: 'eval', content: res_string },
+                    childid
+                );
+                let function_node = getNode(childid);
+
+                try {
+                    let conslog = function (...a: any) {
+                        res_string += a + '\n';
+                        console.log(res_string);
+                        console.log(child);
+                        function_node.update((n) => ({
+                            ...n,
+                            message: { ...n.message, content: res_string }
+                        }));
+                    };
+
+                    let call = JSON.parse(fcall.arguments);
+
+                    let code = call.argument.replaceAll('console.log', 'conslog');
+
+                    res = eval(code);
+
+                    if (res instanceof Promise) {
+                        console.log('awaiting promise');
+                        res = await res;
+                        res_string += JSON.stringify(res);
+                    }
+
+                    console.log(res);
+
+                    res_string += JSON.stringify(res) ?? '';
+                    function_node.update((n) => ({
+                        ...n,
+                        message: { ...n.message, content: res_string }
+                    }));
+                } catch (e) {
+                    console.log(e);
+                    console.log(fcall.arguments);
+                    let estring = String(e);
+                    console.log(estring);
+                    res_string += estring;
+                    function_node.update((n) => ({
+                        ...n,
+                        message: { ...n.message, content: res_string }
+                    }));
+                }
+            }
+        }
+
+        createNode({ role: 'user', content: '' }, childid);
     }
     onMount(() => {
         node.subscribe((val) => {
             if (val.children.length > old_child_count) {
                 openchild = 0;
-                console.log('child added');
+                console.log('child added', old_child_count);
                 old_child_count = val.children.length;
             } else if (val.children.length < old_child_count) {
                 console.log('child removed');
@@ -68,7 +128,11 @@
 </script>
 
 {#if $node}
-    <Message id={nodeId} sendMessage={send} />
+    {#if $node.message.role == 'user'}
+        <DynamicMessage id={nodeId} sendMessage={send} />
+    {:else}
+        <StaticMessage id={nodeId} />
+    {/if}
 
     {#if $node.children.length > 0}
         <div class="navbar">

@@ -1,16 +1,28 @@
 <script lang="ts">
     import { onMount, tick } from 'svelte';
-    import { chatCompletion } from './backendrequest';
-    import { type chatMessage } from './store';
-    import Message from './message.svelte';
+
+    import { getNode, type chatMessage, createNode } from './store';
+    import Message from './staticMessage.svelte';
     import ChatNode from './chatNode.svelte';
 
-    function reset() {}
+    function reset() {
+        createNode({ role: 'user', content: '' }, 0);
+    }
+
+    onMount(() => {
+        if (window.origin.includes('localhost')) {
+            document.title = 'LocalRing';
+            console.log('local');
+        }
+    });
 </script>
 
 <main>
-    <!-- <ChatNode nodeId = {db.conversations[0].root} /> -->
     <ChatNode nodeId={0} />
+
+    <div class="footer">
+        <button class="homebtn" on:click={reset} />
+    </div>
 </main>
 
 <style>
@@ -49,5 +61,29 @@
         position: fixed;
         bottom: 0;
         padding: 1em;
+    }
+    .footer {
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        position: fixed;
+        left: 0;
+        width: 100%;
+    }
+    .homebtn {
+        all: unset;
+        color: white;
+        font-size: 2em;
+        /* background-color: rgb(80, 80, 80); */
+        padding: 0.5em 0.5em;
+        border-radius: 1em;
+        margin: 1em;
+        background-image: url('/favicon2.svg');
+        background-repeat: no-repeat;
+        width: 1em;
+        height: 1em;
+        background-size: contain;
+        background-color: rgb(24, 24, 24);
+        box-shadow: 0 0 0.5em rgb(24, 24, 24);
     }
 </style>
