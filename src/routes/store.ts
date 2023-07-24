@@ -56,7 +56,7 @@ export const primer = createWritable('primer', {
     message: {
         role: 'system' as 'system',
         content:
-            'You are assistant, a helpful AI. You can do almost anything. If you need to use eval function to execute any javascript code and fulfill your task.'
+            'You are a helpful AI running in a web page with access to the native eval function. If you need to you can use the eval function for many tasks.'
     },
     parent: null,
     children: []

@@ -10,6 +10,7 @@
         type function_call,
         type function_result
     } from './store';
+    import { get } from 'svelte/store';
 
     export let id: MessageNodeId;
 
@@ -113,7 +114,7 @@
                         {fcall.function_call.name}
                     </button>
                     {#if show_function_call}
-                        <div style="margin:1em">
+                        <div style="margin-top:1em">
                             {format_function_arguments(fcall.function_call.arguments)}
                         </div>
                     {/if}
