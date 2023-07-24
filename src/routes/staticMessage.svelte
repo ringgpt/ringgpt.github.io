@@ -73,9 +73,8 @@
             let code = res.substring(inner_start_index + 4, last_index);
             let copycode = code.replaceAll('"', '\\"').replaceAll('<br>', '\n');
             let codeblock =
-                `<pre class="codeblock"><div> ${lang} <button onclick='navigator.clipboard.writeText(\`${copycode}\`)'>copy</button> </div>` +
-                code +
-                '</pre>';
+                // `<pre class="codeblock"><div> ${lang} <button onclick='navigator.clipboard.writeText(\`${copycode}\`)'>copy</button> </div>` +
+                `<pre class="codeblock"><div> ${lang} </div>` + code + '</pre>';
 
             res = res.substring(0, start_index) + codeblock + res.substring(last_index + 3);
         }
