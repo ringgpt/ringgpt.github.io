@@ -18,6 +18,7 @@
 </script>
 
 <main>
+    <a class="headerlink" href="/settings">settings</a>
     <ChatNode nodeId={0} />
 
     <div class="footer">
@@ -26,6 +27,11 @@
 </main>
 
 <style>
+    .headerlink {
+        position: fixed;
+        color: rgba(127, 255, 212, 0.345);
+        top: 2em;
+    }
     .navbar {
         position: fixed;
         top: 0;

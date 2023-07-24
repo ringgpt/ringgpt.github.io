@@ -2,7 +2,15 @@
     import { browser } from '$app/environment';
     import { onMount } from 'svelte';
     import { chatCompletion } from './backendrequest';
-    import { createNode, deleteNode, getNode, type MessageNodeId } from './store';
+    import {
+        context_message_number,
+        createNode,
+        deleteNode,
+        getNode,
+        messagecount,
+        primer,
+        type MessageNodeId
+    } from './store';
     import Message from './staticMessage.svelte';
     import { get, writable } from 'svelte/store';
     import { updated } from '$app/stores';
@@ -30,11 +38,13 @@
     function get_history() {
         let hist = [$node.message];
         let prev = $node.parent;
-        while (prev != null) {
+        while (prev != null && hist.length < $context_message_number) {
             let prevnode = getNode(prev);
             hist = [get(prevnode).message, ...hist];
             prev = get(prevnode).parent;
         }
+
+        hist = [$primer.message, ...hist];
 
         console.log(hist);
         return hist;
@@ -42,6 +52,8 @@
 
     async function send() {
         let hist = get_history();
+        console.log({ hist });
+
         let childid = createNode({ role: 'assistant', content: '' }, nodeId);
 
         let child = getNode(childid);
@@ -130,26 +142,28 @@
 {#if $node}
     {#if $node.message.role == 'user'}
         <DynamicMessage id={nodeId} sendMessage={send} />
-    {:else}
+    {:else if $node.message.role != 'system'}
         <StaticMessage id={nodeId} />
     {/if}
 
     {#if $node.children.length > 0}
-        <div class="navbar">
-            <button
-                class={openchild > 0 ? 'active' : 'hidden'}
-                on:click={() => {
-                    openchild = Math.max(0, openchild - 1);
-                }}>&lt;</button
-            >
+        {#if $node.message.role != 'system'}
+            <div class="navbar">
+                <button
+                    class={openchild > 0 ? 'active' : 'hidden'}
+                    on:click={() => {
+                        openchild = Math.max(0, openchild - 1);
+                    }}>&lt;</button
+                >
 
-            <button
-                class={$node.children.length > openchild + 1 ? 'active' : 'hidden'}
-                on:click={() => {
-                    openchild = Math.min($node.children.length - 1, openchild + 1);
-                }}>&gt;</button
-            >
-        </div>
+                <button
+                    class={$node.children.length > openchild + 1 ? 'active' : 'hidden'}
+                    on:click={() => {
+                        openchild = Math.min($node.children.length - 1, openchild + 1);
+                    }}>&gt;</button
+                >
+            </div>
+        {/if}
 
         <div>
             <svelte:self nodeId={$node.children[openchild]} />

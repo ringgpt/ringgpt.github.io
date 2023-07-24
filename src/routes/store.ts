@@ -50,6 +50,18 @@ if (browser) {
     }
 }
 
+export const context_message_number = createWritable('context_message_number', 10);
+
+export const primer = createWritable('primer', {
+    message: {
+        role: 'system' as 'system',
+        content:
+            'You are assistant, a helpful AI. You can do almost anything. If you need to use eval function to execute any javascript code and fulfill your task.'
+    },
+    parent: null,
+    children: []
+});
+
 export const messagecount = createWritable('messagecount', 0);
 
 export type chatMessage = {
@@ -88,22 +100,15 @@ let database: { [keys: MessageNodeId]: Writable<MessageNode> } = {};
 
 if (browser) {
     if (!localStorage.getItem('message_0')) {
-        createNode({ role: 'assistant', content: 'how can I help you?' }, null);
-        createNode({ role: 'user', content: 'explain quantum computing for a five year old' }, 0);
-        createNode({ role: 'user', content: 'say "I love you" in binary' }, 0);
-        createNode({ role: 'user', content: 'show me a quine in javascript' }, 0);
-        let lastid = createNode({ role: 'user', content: 'what is the current time?' }, 0);
+        let lastchild = createNode({ role: 'assistant', content: 'how can I help you?' }, null);
+        createNode(
+            { role: 'user', content: 'explain quantum computing for a five year old' },
+            lastchild
+        );
+        createNode({ role: 'user', content: 'say "I love you" in binary' }, lastchild);
+        createNode({ role: 'user', content: 'show me a quine in javascript' }, lastchild);
 
-        // lastid = createNode(
-        //     {
-        //         role: 'assistant',
-        //         content: null,
-        //         function_call: { name: 'eval', arguments: '{"argument":"1+1"}' }
-        //     },
-        //     lastid
-        // );
-        // lastid = createNode({ role: 'function', name: 'eval', content: '2' }, lastid);
-        // lastid = createNode({ role: 'user', content: 'good.' }, lastid);
+        let lastid = createNode({ role: 'user', content: 'what is the current time?' }, lastchild);
     }
 }
 

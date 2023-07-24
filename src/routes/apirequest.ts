@@ -15,7 +15,7 @@ export async function chat_stream_request(params: OpenAIStreamPayload, oaikey: s
                 {
                     name: 'eval',
                     description:
-                        'if you need to evaluate javascript code you can use this function',
+                        'Use this function to evaluate any javascript code. It can fetch information from the internet.',
                     parameters: {
                         type: 'object',
                         properties: {
