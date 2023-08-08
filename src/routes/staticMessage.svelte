@@ -22,14 +22,9 @@
     }
     let message: chatMessage = $node.message;
     let fcall: function_call | null = null;
-    let fres: function_result | null = null;
 
     if (message.function_call) {
         fcall = message as function_call;
-    }
-
-    if (message.name) {
-        fres = message as function_result;
     }
 
     $: {
@@ -39,11 +34,6 @@
             fcall = message as function_call;
         } else {
             fcall = null;
-        }
-        if (message.name) {
-            fres = message as function_result;
-        } else {
-            fres = null;
         }
     }
 
@@ -99,12 +89,17 @@
 </script>
 
 <div class="bubble">
+
+
     <button>&nbsp;</button>
 
     {#if $node.message.role == 'assistant'}
-        {#if fcall}
-            <div class="assistant">
-                <div class="msg">
+        <div class="assistant">
+            <div class="msg">
+                {@html tohtml(message.content)}
+
+                {#if fcall}
+                    {#if message.content}<br />{/if}
                     <button
                         class="function_title"
                         on:click={() => {
@@ -117,26 +112,23 @@
                         <div style="margin-top:1em">
                             {format_function_arguments(fcall.function_call.arguments)}
                         </div>
+                        <div>
+                            > {get(getNode($node.children[0])).message.content}
+                        </div>
                     {/if}
-                </div>
+                {/if}
             </div>
-        {:else}
-            <div class="assistant">
-                <div class="msg">
-                    {@html tohtml(message.content)}
-                </div>
-            </div>
-        {/if}
-    {:else if message.role == 'function'}
+        </div>
+        <!-- {:else if message.role == 'function'}
         <div class="function">
             <div class="msg">
                 {fres?.content}
             </div>
-        </div>
+        </div> -->
     {:else}
         <div>
             <div class="msg">
-                <h2>error243</h2>
+                <h2>error not expected type</h2>
                 {message.content}
             </div>
         </div>
@@ -167,27 +159,27 @@
     }
     .bubble > button {
         all: unset;
-        display: none;
+        color:transparent;
         margin: 0.5em;
     }
 
     .msg {
         color: white;
         justify-content: flex-start;
-        max-width: 40em;
         white-space: pre-wrap; /* Wrap long lines of text */
         font-family: monospace;
         padding: 10px;
     }
 
     .user,
-    .assistant,
-    .function {
+    .assistant {
         display: flex;
+        flex-direction: column;
         right: 0;
         justify-content: center;
         background-color: #28b36b;
         border-radius: 10px;
+        max-width: 40em;
     }
 
     .function {

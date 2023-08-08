@@ -26,6 +26,24 @@ export async function chat_stream_request(params: OpenAIStreamPayload, oaikey: s
                         },
                         required: ['argument']
                     }
+                },
+                {
+                    name: 'fetch_grocery_sortiment',
+                    description:
+                        'Use this function to fetch the grocery sortiment from the internet.',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            store: {
+                                type: 'string',
+                                description: 'The store to fetch the sortiment from.'
+                            },
+                            name: {
+                                type: 'string',
+                                description: 'The name of the product to fetch.'
+                            }
+                        }
+                    }
                 }
             ],
 

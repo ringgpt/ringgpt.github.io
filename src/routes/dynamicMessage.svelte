@@ -16,7 +16,7 @@
         if (me && old_id != id) {
             me.innerHTML = tohtml($node.message.content!);
             old_id = id;
-            me.focus();
+            // me.focus();
         }
     }
 
@@ -119,8 +119,8 @@
         }
     }
 </script>
-
 <div class="bubble">
+
     <button>&nbsp;</button>
     {#if $node.message.role == 'user'}
         <div class="user">
@@ -135,12 +135,12 @@
                 on:input={input}
                 on:paste={onpaste}
             />
-            <button
+            <!-- <button
                 class="active"
                 on:click={() => {
                     deleteNode(id);
                 }}>x</button
-            >
+            > -->
         </div>
     {:else}
         <div class="assistant">
@@ -167,7 +167,8 @@
     }
     button {
         all: unset;
-        display: none;
+        /* display: none; */
+        color:transparent;
         margin: 0.5em;
     }
 

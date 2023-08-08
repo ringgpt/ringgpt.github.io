@@ -41,26 +41,8 @@ export function createWritable<T>(key: string, defaultValue: T) {
 export const useserver = createWritable('useserver', false);
 export const openaikey = createWritable('openaikey', '');
 
-if (browser) {
-    if (get(openaikey) == '') {
-        let usrinput = prompt('please enter your openai key');
-        if (usrinput != null) {
-            openaikey.set(usrinput);
-        }
-    }
-}
 
 export const context_message_number = createWritable('context_message_number', 10);
-
-export const primer = createWritable('primer', {
-    message: {
-        role: 'system' as 'system',
-        content:
-            'You are a helpful AI running in a web page with access to the native eval function. If you need to you can use the eval function for many tasks.'
-    },
-    parent: null,
-    children: []
-});
 
 export const messagecount = createWritable('messagecount', 0);
 
@@ -88,6 +70,57 @@ export type function_result = {
     content: string;
 };
 
+export type Persona = {
+    name: string;
+    primer_id:MessageNodeId
+    starter_id: MessageNodeId;
+};
+
+export function new_persona():Persona{
+
+    console.log();
+    
+
+    let name="new_persona"
+    let primer =  'The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.'
+    let start_message = 'Hello, how can I help you today?'
+
+    let primer_id = createNode({role:"system",content:primer},null)
+    let starter_id = createNode({role:"assistant",content:start_message},primer_id)
+    createNode({role:"user",content:""},starter_id)
+
+    return {
+        name,primer_id,starter_id
+    }
+}
+
+let database: { [keys: MessageNodeId]: Writable<MessageNode> } = {};
+
+
+export var personas:Writable<Persona[]> = writable([])
+if (browser) {
+    if (get(openaikey) == '') {
+        let usrinput = prompt('please enter your openai key');
+        if (usrinput != null) {
+            openaikey.set(usrinput);
+        }
+    }
+
+    if (!localStorage.personas){
+        let newone = new_persona()
+        newone.name = "ringGPT"
+        personas.set([newone])
+        personas.subscribe(new_value => localStorage.personas = JSON.stringify(new_value))
+    }else{
+        personas.set(JSON.parse(localStorage.personas))
+    }
+    
+}
+
+
+
+export var active_persona: Writable<number> = createWritable('active_persona', 0);
+
 export type MessageNode = {
     message: chatMessage;
     children: MessageNodeId[];
@@ -96,21 +129,6 @@ export type MessageNode = {
 
 export type MessageNodeId = number;
 
-let database: { [keys: MessageNodeId]: Writable<MessageNode> } = {};
-
-if (browser) {
-    if (!localStorage.getItem('message_0')) {
-        let lastchild = createNode({ role: 'assistant', content: 'how can I help you?' }, null);
-        createNode(
-            { role: 'user', content: 'explain quantum computing for a five year old' },
-            lastchild
-        );
-        createNode({ role: 'user', content: 'say "I love you" in binary' }, lastchild);
-        createNode({ role: 'user', content: 'show me a quine in javascript' }, lastchild);
-
-        let lastid = createNode({ role: 'user', content: 'what is the current time?' }, lastchild);
-    }
-}
 
 export function getNode(id: MessageNodeId) {
     if (!database[id]) {
@@ -128,7 +146,7 @@ export function getNode(id: MessageNodeId) {
     return database[id];
 }
 
-export function createNode(message: chatMessage, parent: MessageNodeId | null) {
+export function createNode(message: chatMessage, parent: MessageNodeId | null):MessageNodeId{
     if (message.role == 'function') {
         if (message.content == undefined) {
             message.content = '';

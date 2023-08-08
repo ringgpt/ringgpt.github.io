@@ -1,25 +1,42 @@
 <script lang="ts">
     import { onMount, tick } from 'svelte';
 
-    import { getNode, type chatMessage, createNode } from './store';
+    import { getNode, type chatMessage, createNode, active_persona, personas } from './store';
     import Message from './staticMessage.svelte';
     import ChatNode from './chatNode.svelte';
+    import { get } from 'svelte/store';
 
     function reset() {
-        createNode({ role: 'user', content: '' }, 0);
+
+
+        // console.log(`setting character ${$active_persona.name} id.${$active_persona.starter_id}`);
+        
+        createNode({ role: 'user', content: '' }, $personas[$active_persona].starter_id);
     }
+
+    var root = 0
 
     onMount(() => {
         if (window.origin.includes('localhost')) {
             document.title = 'LocalRing';
             console.log('local');
         }
+
+        // root = get(getNode($active_persona.starter_id)).parent!
+
     });
+
 </script>
 
 <main>
+
+    
     <a class="headerlink" href="/settings">settings</a>
-    <ChatNode nodeId={0} />
+    <!-- {get(active_persona).starter_id} -->
+    <!-- <ChatNode nodeId={get(active_persona).starter_id} /> -->
+    {#if $active_persona!=undefined && $personas[$active_persona]}
+        <ChatNode nodeId={ $personas [$active_persona].starter_id} />
+    {/if}
 
     <div class="footer">
         <button class="homebtn" on:click={reset} />
@@ -84,7 +101,7 @@
         padding: 0.5em 0.5em;
         border-radius: 1em;
         margin: 1em;
-        background-image: url('/favicon2.svg');
+        background-image: url('/favicon3.svg');
         background-repeat: no-repeat;
         width: 1em;
         height: 1em;

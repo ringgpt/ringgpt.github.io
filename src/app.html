@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8" />
-        <link rel="icon" href="%sveltekit.assets%/favicon2.svg" />
+        <link rel="icon" href="%sveltekit.assets%/favicon3.svg" />
         <meta name="viewport" content="width=device-width" />
         <title>RingGpt</title>
         %sveltekit.head%
@@ -11,6 +11,19 @@
         <div style="display: contents">%sveltekit.body%</div>
     </body>
 </html>
+
+
+<script>
+
+    function reset(){
+        key = localStorage.openaikey
+        console.log(key);
+        localStorage.clear()
+        localStorage.openaikey = key
+        window.location.reload()
+    }
+
+</script>
 
 <style>
     body {

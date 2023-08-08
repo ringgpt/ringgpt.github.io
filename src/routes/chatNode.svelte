@@ -8,13 +8,12 @@
         deleteNode,
         getNode,
         messagecount,
-        primer,
-        type MessageNodeId
+        type MessageNodeId,
+        type MessageNode
     } from './store';
     import Message from './staticMessage.svelte';
-    import { get, writable } from 'svelte/store';
-    import { updated } from '$app/stores';
-    import UserMessage from './staticMessage.svelte';
+    import { get, writable, type Writable } from 'svelte/store';
+
     import DynamicMessage from './dynamicMessage.svelte';
     import StaticMessage from './staticMessage.svelte';
 
@@ -35,26 +34,28 @@
 
     let openchild = 0;
 
-    function get_history() {
-        let hist = [$node.message];
-        let prev = $node.parent;
+    function get_history(last?: Writable<MessageNode>) {
+        if (last == undefined) last = node;
+        let hist = [get(last).message];
+        let prev = get(last).parent;
         while (prev != null && hist.length < $context_message_number) {
             let prevnode = getNode(prev);
             hist = [get(prevnode).message, ...hist];
             prev = get(prevnode).parent;
         }
 
-        hist = [$primer.message, ...hist];
-
         console.log(hist);
         return hist;
     }
 
-    async function send() {
-        let hist = get_history();
+    async function send(senderID?: number) {
+        if (senderID == undefined) {
+            senderID = nodeId;
+        }
+        let hist = get_history(getNode(senderID));
         console.log({ hist });
 
-        let childid = createNode({ role: 'assistant', content: '' }, nodeId);
+        let childid = createNode({ role: 'assistant', content: '' }, senderID);
 
         let child = getNode(childid);
 
@@ -91,10 +92,13 @@
 
                     let call = JSON.parse(fcall.arguments);
 
-                    let code = call.argument.replaceAll('console.log', 'conslog');
+                    let code: string = call.argument.replaceAll('console.log', 'conslog');
 
                     res = eval(code);
 
+                    if (code.includes('conslog')) {
+                        await new Promise((resolve) => setTimeout(resolve, 1000));
+                    }
                     if (res instanceof Promise) {
                         console.log('awaiting promise');
                         res = await res;
@@ -120,10 +124,12 @@
                     }));
                 }
             }
+            send(childid);
+        } else {
+            createNode({ role: 'user', content: '' }, childid);
         }
-
-        createNode({ role: 'user', content: '' }, childid);
     }
+
     onMount(() => {
         node.subscribe((val) => {
             if (val.children.length > old_child_count) {
@@ -142,12 +148,12 @@
 {#if $node}
     {#if $node.message.role == 'user'}
         <DynamicMessage id={nodeId} sendMessage={send} />
-    {:else if $node.message.role != 'system'}
+    {:else if $node.message.role != 'system' && $node.message.role != 'function'}
         <StaticMessage id={nodeId} />
     {/if}
 
     {#if $node.children.length > 0}
-        {#if $node.message.role != 'system'}
+        {#if $node.message.role != 'system' && $node.message.role != 'function'}
             <div class="navbar">
                 <button
                     class={openchild > 0 ? 'active' : 'hidden'}
