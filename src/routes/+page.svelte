@@ -30,11 +30,10 @@
 
 <main>
 
-    
-    <a class="headerlink" href="/settings">settings</a>
-    <!-- {get(active_persona).starter_id} -->
-    <!-- <ChatNode nodeId={get(active_persona).starter_id} /> -->
     {#if $active_persona!=undefined && $personas[$active_persona]}
+        <a class="headerlink" href="/settings" >{ $personas[$active_persona].name}</a>
+
+        <p></p>
         <ChatNode nodeId={ $personas [$active_persona].starter_id} />
     {/if}
 
@@ -45,22 +44,15 @@
 
 <style>
     .headerlink {
-        position: fixed;
+        /* position: fixed; */
         color: rgba(127, 255, 212, 0.345);
-        top: 2em;
-    }
-    .navbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 3em;
 
-        display: flex;
-        justify-content: center;
-        background-color: rgb(24, 24, 24);
-        padding-bottom: 1.3em;
+        background-color: rgb(24,24,24);
+        text-decoration: none;
+        padding: .5em;
+        box-shadow: 0 0 0.5em black;
     }
+    
 
     .navbar > button {
         all: unset;
@@ -76,8 +68,9 @@
     }
 
     main {
-        padding: 5em 2em;
+        padding: 2em 2em;
         padding-bottom: 70vh;
+
     }
 
     .input {
